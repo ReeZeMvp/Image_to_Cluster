@@ -4,10 +4,18 @@ all: install build import deploy forward
 
 install:
 	@echo "=== Installation de Packer et Ansible ==="
+	@echo "Nettoyage des repositories problématiques..."
+	sudo rm -f /etc/apt/sources.list.d/yarn.list || true
+	@echo "Ajout du repository HashiCorp..."
 	curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 	echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $$(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-	sudo apt-get update && sudo apt-get install -y packer ansible
+	@echo "Mise à jour des packages..."
+	sudo apt-get update || (echo "Erreur lors de l'update, tentative de nettoyage..." && sudo apt-get clean && sudo apt-get update)
+	@echo "Installation de Packer et Ansible..."
+	sudo apt-get install -y packer ansible
+	@echo "Installation des collections Ansible..."
 	ansible-galaxy collection install kubernetes.core
+	@echo "Installation du module Python Kubernetes..."
 	pip install kubernetes --break-system-packages
 
 build:
